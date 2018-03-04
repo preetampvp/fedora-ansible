@@ -1,0 +1,45 @@
+---
+- name: SSH keys
+  connection: local
+  hosts:
+    - localhost
+  tasks:
+    - name: Create .ssh directory
+      file: 
+       path: /home/preetam/.ssh
+       state: directory
+       mode: 0755
+    - name: Check if id_rsa exists
+      stat:
+        path: /home/preetam/.ssh/id_rsa
+      register: st
+    - name: debug
+      debug:
+        msg: "{{st}}"
+    - name: Generate ssh keys
+      shell: ssh-keygen -t rsa -b 4096 -C "preetamvp@hotmail.com" -f /home/preetam/.ssh/id_rsa -q
+      when: st.stat.exists == false
+    - name: Change owner and permissions of ssh keys
+      file:
+        path: "/home/preetam/.ssh/{{item}}"
+        owner: preetam
+        group: preetam
+        mode: 0400
+      with_items:
+        - id_rsa
+        - id_rsa.pub
+
+
+- name: Add required repos
+  connection: local
+  hosts:
+    - localhost
+  roles:
+   - install-repos	
+
+- name: Install required package
+  connection: local
+  hosts:
+   - localhost
+  roles:
+   - install-packages	

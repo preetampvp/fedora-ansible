@@ -1,0 +1,77 @@
+---
+- name: Setup zsh as default shell
+  shell: which zsh
+  register: zsh_path
+
+- name: Debug
+  debug:
+    msg: "{{zsh_path.stdout}}"
+
+- name: set zsh as the default shell
+  replace:
+   path: /etc/passwd
+   regexp: preetam:/bin/bash$
+   replace: "preetam:{{zsh_path.stdout}}"
+
+- name: Check if Oh My Zsh is installed
+  stat:
+    path: /home/{{owner}}/.oh-my-zsh
+  register: ohmyzsh_present
+
+- name: Copy .zshrc
+  copy:
+    src: .zshrc
+    dest: "/home/{{owner}}/.zshrc"
+    owner: "{{owner}}"
+    group: "{{owner}}"
+    mode: 0664
+    force: no
+  when: ohmyzsh_present.stat.exists == false
+
+
+
+- name: Install Oh my zsh
+  shell: "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
+  become_user: "{{owner}}"
+  become: yes
+  when: ohmyzsh_present.stat.exists == false
+
+- name: Set zsh theme to agnoster
+  replace:
+    path: "/home/{{owner}}/.zshrc"
+    regexp: robbyrussell
+    replace: agnoster
+  
+
+- name: Fetch Powerline fonts
+  git:
+    repo: git@github.com:powerline/fonts.git
+    dest: "/home/{{owner}}/Documents/WorkingDirectory/github/fonts"
+  become_user: "{{owner}}"
+  become: yes
+
+- name: Install Powerline fonts
+  shell: "/home/{{owner}}/Documents/WorkingDirectory/github/fonts/install.sh"
+  become_user: "{{owner}}"
+  become: yes
+
+- name: Update Terminator fonts
+  lineinfile:
+    path: "/home/{{owner}}/.config/terminator/config"
+    regexp: font = Inconsolata-dz for Powerline Medium 10
+    state: present 
+    line: "font = Inconsolata-dz for Powerline Medium 10"
+
+- name: Disable terminator using system fonts
+  lineinfile:
+    path: "/home/{{owner}}/.config/terminator/config"
+    regexp: use_system_font = False
+    state: present
+    line: use_system_font = False
+
+
+  
+  
+  
+  
+  
